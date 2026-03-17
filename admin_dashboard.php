@@ -8,9 +8,10 @@ if(!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin'){
 }
 
 /* TOTAL STUDENTS */
-$result = $conn->query("SELECT COUNT(*) as total FROM students");
+$result = $conn->query("SELECT COUNT(*) as total FROM students WHERE role != 'admin'");
 $data = $result->fetch_assoc();
 $total_students = $data['total'];
+
 
 /* POST ANNOUNCEMENT */
 if(isset($_POST['post_announcement'])){
@@ -42,6 +43,41 @@ if(isset($_GET['delete'])){
 
 /* GET ANNOUNCEMENTS */
 $announcements = $conn->query("SELECT * FROM announcements ORDER BY created_at DESC");
+
+/* SEARCH STUDENT */
+$searchResults = null;
+
+if(isset($_POST['search'])){
+    $keyword = trim($_POST['keyword']);
+    $keyword = "%$keyword%";
+
+    $stmt = $conn->prepare("
+        SELECT * FROM students 
+        WHERE role != 'admin' AND (
+            id_number LIKE ? 
+            OR first_name LIKE ? 
+            OR middle_name LIKE ?
+            OR last_name LIKE ?
+            OR CONCAT(first_name, ' ', middle_name, ' ', last_name) LIKE ?
+        )
+    ");
+
+    $stmt->bind_param("sssss", $keyword, $keyword, $keyword, $keyword, $keyword);
+    $stmt->execute();
+    $searchResults = $stmt->get_result();
+}
+
+/* CHART DATA (LANGUAGE USAGE) */
+$chart_labels = [];
+$chart_data = [];
+
+$chart_query = $conn->query("SELECT purpose, COUNT(*) as total FROM sitin_records GROUP BY purpose");
+
+while($row = $chart_query->fetch_assoc()){
+    $chart_labels[] = $row['purpose'];
+    $chart_data[] = $row['total'];
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -54,7 +90,6 @@ $announcements = $conn->query("SELECT * FROM announcements ORDER BY created_at D
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-
 /* RESET */
 *{
 margin:0;
@@ -262,46 +297,65 @@ background:#f0f0f0;
 <img src="uclogo.png" id="uc">
 <span>College of Computer Studies Sit-in Monitoring System</span>
 </div>
-
-<div class="topnavInside">
-<ul>
-<li><a class="active" href="#">Home</a></li>
-<li><a href="#" onclick="openSearch()">Search</a></li>
-<li><a href="students.php">Students</a></li>
-<li><a href="#" onclick="openSitIn()">Sit-in</a></li>
-<li><a href="view_sitin_records.php">View Sit-in Records</a></li>
-<li><a href="#">Sit-in Reports</a></li>
-<li><a href="#">Feedback Reports</a></li>
-<li><a href="#">Reservation</a></li>
-<li><a href="logout.php">Logout</a></li>
-</ul>
+    <div class="topnavInside">
+        <ul>
+        <li><a class="active" href="admin_dashboard.php">Home</a></li>
+        <li><a href="#" onclick="openSearch()">Search</a></li>
+        <li><a href="students.php">Students</a></li>
+        <li><a href="#" onclick="openSitIn()">Sit-in</a></li>
+        <li><a href="view_sitin_records.php">View Sit-in Records</a></li>
+        <li><a href="#">Sit-in Reports</a></li>
+        <li><a href="#">Feedback Reports</a></li>
+        <li><a href="#">Reservation</a></li>
+        <li><a href="logout.php">Logout</a></li>
+        </ul>
+    </div>
 </div>
 
-</div>
 <!-- SEARCH MODAL -->
 <div id="searchModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Search Student</h3>
+      <span class="close" onclick="closeSearch()">×</span>
+    </div>
+    <div class="modal-body">
+      <form method="POST" id="searchForm">
+        <input type="text" name="keyword" placeholder="Search..." required value="<?php echo isset($_POST['keyword']) ? htmlspecialchars($_POST['keyword']) : '' ?>">
+        <button type="submit" name="search" class="search-btn">Search</button>
+      </form>
 
-<div class="modal-content">
-
-<div class="modal-header">
-<h3>Search Student</h3>
-<span class="close" onclick="closeSearch()">×</span>
+      <?php if ($searchResults !== null): ?>
+        <hr>
+        <h4>Search Results:</h4>
+        <?php if ($searchResults->num_rows > 0): ?>
+          <table>
+            <thead>
+              <tr>
+                <th>ID Number</th>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Course</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php while ($row = $searchResults->fetch_assoc()): ?>
+                <tr>
+                  <td><?php echo htmlspecialchars($row['id_number']); ?></td>
+                  <td><?php echo htmlspecialchars($row['first_name']); ?></td>
+                  <td><?php echo htmlspecialchars($row['last_name']); ?></td>
+                  <td><?php echo htmlspecialchars($row['course']); ?></td>
+                </tr>
+              <?php endwhile; ?>
+            </tbody>
+          </table>
+        <?php else: ?>
+          <p>No students found matching your search.</p>
+        <?php endif; ?>
+      <?php endif; ?>
+    </div>
+  </div>
 </div>
-
-<div class="modal-body">
-
-<form method="POST">
-
-<input type="text" name="keyword" placeholder="Search..." required>
-<button class="search-btn" name="search">Search</button>
-
-</form>
-
-</div>
-</div>
-</div>
-
-
 <!-- SIT-IN MODAL -->
 <div id="sitInModal" class="modal">
 
@@ -323,7 +377,14 @@ background:#f0f0f0;
 <input type="text" name="student_name">
 
 <label>Purpose</label>
-<input type="text" name="purpose" required>
+<select name="purpose" required>
+    <option value="">Select Language</option>
+    <option value="C">C</option>
+    <option value="C#">C#</option>
+    <option value="Java">Java</option>
+    <option value="PHP">PHP</option>
+    <option value="ASP.Net">ASP.Net</option>
+</select>
 
 <label>Lab</label>
 <input type="text" name="lab" required>
@@ -350,13 +411,20 @@ Sit In
 <div class="dashboard-title">Statistics</div>
 
 <p><b>Students Registered:</b> <?php echo $total_students; ?></p>
-<p><b>Currently Sit-in:</b> 6</p>
-<p><b>Total Sit-in:</b> 15</p>
+<?php
+$current = $conn->query("SELECT COUNT(*) as total FROM sitin_records WHERE status='Active'");
+$total   = $conn->query("SELECT COUNT(*) as total FROM sitin_records");
+
+$current_count = $current->fetch_assoc()['total'];
+$total_count   = $total->fetch_assoc()['total'];
+?>
+
+<p><b>Currently Sit-in:</b> <?php echo $current_count; ?></p>
+<p><b>Total Sit-in:</b> <?php echo $total_count; ?></p>
 
 <canvas id="chart"></canvas>
 
 </div>
-
 
 <div class="dashboard-card">
 
@@ -445,16 +513,24 @@ window.location = "admin_dashboard.php?delete=" + id;
 /* CHART */
 const ctx = document.getElementById('chart');
 
+// PHP injects the chart data dynamically
+const labels = <?php echo json_encode($chart_labels); ?>;
+const data = <?php echo json_encode($chart_data); ?>;
+
 new Chart(ctx,{
 type:'pie',
 data:{
-labels:['C#','C','Java','ASP.Net','PHP'],
+labels: labels,
 datasets:[{
-data:[5,8,3,4,2]
+data: data,
+backgroundColor:['#ff6384','#36a2eb','#ffce56','#4bc0c0','#9966ff']
 }]
 }
 });
 
+<?php if ($searchResults !== null): ?>
+document.getElementById("searchModal").style.display = "block";
+<?php endif; ?>
 </script>
 
 </body>
