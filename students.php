@@ -11,18 +11,18 @@ if(!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin'){
 }
 
 /* FETCH STUDENTS */
+/* SEARCH MODAL FUNCTION (SAFE ADD) */
 $searchResults = null;
 
-if(isset($_GET['search'])){
-    $keyword = trim($_GET['search']);
-    $keyword = "%$keyword%";
+if(isset($_GET['keyword'])){
+    $keyword = "%" . trim($_GET['keyword']) . "%";
 
     $stmt = $conn->prepare("
         SELECT * FROM students 
         WHERE role != 'admin' AND (
             id_number LIKE ? 
             OR first_name LIKE ? 
-            OR middle_name LIKE ?
+            OR middle_name LIKE ? 
             OR last_name LIKE ?
             OR CONCAT(first_name, ' ', middle_name, ' ', last_name) LIKE ?
         )
@@ -162,42 +162,78 @@ float:right;
 margin-top:-35px;
 }
 
+/* MODAL BACKGROUND */
 .modal {
- display: none; /* hidden by default */
-  position: fixed;
-  z-index: 9999;
-  top: 0; left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0,0,0,0.5);
-
-  justify-content: center; /* horizontal center */
-  align-items: center;     /* vertical center */
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    align-items: center;
+    justify-content: center;
 }
 
 .modal.show {
-  display: flex; /* show modal with flex */
+    display: flex;
 }
 
+/* MODAL BOX */
 .modal-content {
-  background: white;
-  border-radius: 8px;
-  width: 400px;
-  max-width: 90vw;
-  padding: 20px 25px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-  position: relative;
-  font-family: Arial, sans-serif;
+    background: #fff;
+    width: 70%;
+    max-width: 900px;
+    border-radius: 10px;
+    padding: 25px 35px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
 }
 
-/* Modal header */
+/* HEADER */
 .modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+.modal-header h2 {
+    margin: 0;
+    font-weight: 600;
 }
 
+.close {
+    font-size: 22px;
+    cursor: pointer;
+}
+
+/* FORM */
+.form-container {
+    display: flex;
+    flex-direction: column;
+}
+.form-container label {
+    font-weight: bold;
+    margin-top: 12px;
+    margin-bottom: 5px;
+}
+
+.form-container input,
+.form-container select {
+    width: 100%;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+}
+
+/* BUTTON */
+.submit-btn {
+    margin-top: 20px;
+    width: 90px;
+    padding: 6px;
+    cursor: pointer;
+}
 .modal-header h3 {
   margin: 0;
   font-weight: bold;
@@ -341,89 +377,172 @@ $row['last_name'];
 </div>
 
 <!-- SEARCH MODAL -->
+<!-- SEARCH MODAL -->
 <div id="searchModal" class="modal">
-  <div class="modal-content" style="width:400px; margin:100px auto; padding:20px; border-radius:8px; box-shadow:0 4px 15px rgba(0,0,0,0.3); background:white;">
-    <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-      <h3>Search Student</h3>
-      <span class="close" onclick="closeSearch()" style="cursor:pointer; font-weight:bold; font-size:20px;">×</span>
+  <div class="modal-content">
+
+    <!-- HEADER -->
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <h2>Search Student</h2>
+      <span class="close" onclick="closeSearch()">×</span>
     </div>
-    <div class="modal-body">
-     <form method="GET" action="students.php">
-      <input type="text" name="search" placeholder="Search..." required
-          value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>"
-          style="width:100%; padding:8px; margin-bottom:12px; border-radius:4px; border:1px solid #ccc;">
-        <button type="submit" style="background:#007bff; color:white; border:none; padding:8px 16px; border-radius:4px; cursor:pointer;">Search</button>
-      </form>
-    </div>
+
+    <hr>
+
+    <!-- SEARCH BAR -->
+    <form method="GET" action="students.php" style="display:flex; gap:10px; margin:15px 0;">
+      <input type="text" name="keyword" placeholder="Search..."
+        value="<?php echo isset($_GET['keyword']) ? htmlspecialchars($_GET['keyword']) : ''; ?>"
+        style="flex:1; padding:10px; border:1px solid #ccc; border-radius:6px;">
+
+      <button type="submit" class="btn btn-add">Search</button>
+    </form>
+
+    <hr>
+
+    <!-- RESULTS -->
+    <?php if (isset($_GET['keyword'])): ?>
+
+    <?php if ($searchResults) $searchResults->data_seek(0); ?>
+
+    <h3>Search Results:</h3>
+
+      <?php if ($searchResults && $searchResults->num_rows > 0): ?>
+        <table>
+          <thead>
+            <tr>
+              <th>ID Number</th>
+              <th>First Name</th>
+              <th>Middle Name</th>
+              <th>Last Name</th>
+              <th>Course</th>
+              <th>Remaining Session</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <?php while ($row = $searchResults->fetch_assoc()): ?>
+              <tr>
+                <td><?php echo htmlspecialchars($row['id_number']); ?></td>
+                <td><?php echo htmlspecialchars($row['first_name']); ?></td>
+                <td><?php echo htmlspecialchars($row['middle_name']); ?></td>
+                <td><?php echo htmlspecialchars($row['last_name']); ?></td>
+                <td><?php echo htmlspecialchars($row['course']); ?></td>
+                <td><?php echo htmlspecialchars($row['sessions_remaining'] ?? 30); ?></td>
+
+                <td>
+                 <button class="search-btn"
+                  onclick="selectStudent(
+                  '<?php echo $row['id_number']; ?>',
+                  '<?php echo $row['first_name'].' '.$row['middle_name'].' '.$row['last_name']; ?>',
+                  '<?php echo $row['sessions_remaining']; ?>'
+                  )">
+                  Sit In
+                  </button>
+                </td>
+              </tr>
+            <?php endwhile; ?>
+          </tbody>
+        </table>
+
+      <?php else: ?>
+        <p>No students found.</p>
+      <?php endif; ?>
+    <?php endif; ?>
+
+        <?php if ($searchResults) $searchResults->data_seek(0); ?>
   </div>
 </div>
 
-<!-- SIT-IN MODAL -->
 <div id="sitInModal" class="modal">
   <div class="modal-content">
+
     <div class="modal-header">
-      <h3>Sit In Form</h3>
-      <span class="close" onclick="closeSitIn()">×</span>
+      <h2>Sit In Form</h2>
+      <span class="close" onclick="closeSitInForm()">×</span>
     </div>
-    <div class="modal-body">
-      <form method="POST" action="sit_in.php">
-        <label>ID Number</label>
-        <input type="text" name="id_number" required placeholder="Enter student ID" />
-        
-        <label>Student Name</label>
-        <input type="text" name="student_name" />
-        
-        <label>Purpose</label>
-        <select name="purpose" required>
-          <option value="">Select Language</option>
-          <option value="C">C</option>
-          <option value="C#">C#</option>
-          <option value="Java">Java</option>
-          <option value="PHP">PHP</option>
-          <option value="ASP.Net">ASP.Net</option>
-        </select>
-        
-        <label>Lab</label>
-        <input type="text" name="lab" required />
-        
-        <label>Remaining Session</label>
-        <input type="text" name="remaining_session" />
-        
-        <button type="submit" onclick="this.disabled=true;this.form.submit();">Sit In</button>
-      </form>
-    </div>
+
+    <form method="POST" action="sit_in.php" class="form-container">
+
+      <label>ID Number</label>
+      <input type="text" name="id_number" placeholder="Enter student ID" required>
+
+      <label>Student Name</label>
+      <input type="text" name="student_name">
+
+      <label>Purpose</label>
+      <select name="purpose" required>
+        <option value="">Select Language</option>
+        <option value="C">C</option>
+        <option value="C#">C#</option>
+        <option value="Java">Java</option>
+        <option value="PHP">PHP</option>
+        <option value="ASP.Net">ASP.Net</option>
+      </select>
+
+      <label>Lab</label>
+      <input type="text" name="lab" required>
+
+      <label>Remaining Session</label>
+      <input type="text" name="remaining_session">
+
+      <button type="submit" class="submit-btn">Sit In</button>
+
+    </form>
+
   </div>
 </div>
 <script>
-   function openSearch() {
+  
+function selectStudent(id, name, session){
+    closeSearch();
+    openSitIn();
+
+    document.querySelector('#sitInModal input[name="id_number"]').value = id;
+    document.querySelector('#sitInModal input[name="student_name"]').value = name;
+    document.querySelector('#sitInModal input[name="remaining_session"]').value = session;
+}
+
+/* SEARCH MODAL */
+function openSearch() {
     document.getElementById('searchModal').classList.add('show');
-  }
+}
 
-  function closeSearch() {
+function closeSearch() {
     document.getElementById('searchModal').classList.remove('show');
-  }
+}
 
-  function openSitIn() {
+/* SIT-IN MODAL */
+function openSitIn() {
     document.getElementById('sitInModal').classList.add('show');
-  }
+}
 
-  function closeSitIn() {
+function closeSitIn() {
     document.getElementById('sitInModal').classList.remove('show');
-  }
+}
 
-  // Close modal when clicking outside modal content for both modals
-  window.onclick = function(event) {
+/* CLOSE WHEN CLICK OUTSIDE */
+window.onclick = function(event) {
     const searchModal = document.getElementById('searchModal');
     const sitInModal = document.getElementById('sitInModal');
 
     if (event.target === searchModal) {
-      closeSearch();
+        closeSearch();
     }
-    if (event.target === sitInModal) {
-      closeSitIn();
-    }
-  };
 
+    if (event.target === sitInModal) {
+        closeSitIn();
+    }
+};
+
+function closeSitInForm(){
+    closeSitIn();
+}
+
+<?php if ($searchResults !== null): ?>
+document.getElementById('searchModal').classList.add('show');
+<?php endif; ?>
 
 </script>
 </body>

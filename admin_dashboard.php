@@ -182,8 +182,13 @@ background:rgba(0,0,0,0.5);
 
 .modal-content{
 background:white;
-width:500px;
-margin:120px auto;
+width:90%;
+max-width:900px;   /* 👈 makes it wider */
+margin:80px auto;
+border-radius:8px;
+box-shadow:0 4px 15px rgba(0,0,0,0.3);
+overflow-x:auto;   /* 👈 enables scroll if needed */
+
 border-radius:8px;
 box-shadow:0 4px 15px rgba(0,0,0,0.3);
 overflow:hidden;
@@ -334,18 +339,33 @@ background:#f0f0f0;
               <tr>
                 <th>ID Number</th>
                 <th>First Name</th>
+                <th>Middle Name</th>
                 <th>Last Name</th>
                 <th>Course</th>
+                <th>Remaining Session</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
               <?php while ($row = $searchResults->fetch_assoc()): ?>
-                <tr>
+               <tr>
                   <td><?php echo htmlspecialchars($row['id_number']); ?></td>
                   <td><?php echo htmlspecialchars($row['first_name']); ?></td>
+                  <td><?php echo htmlspecialchars($row['middle_name']); ?></td>
                   <td><?php echo htmlspecialchars($row['last_name']); ?></td>
                   <td><?php echo htmlspecialchars($row['course']); ?></td>
-                </tr>
+                  <td><?php echo htmlspecialchars($row['sessions_remaining'] ?? 30); ?></td>
+
+                  <td>
+                      <button class="search-btn"
+                          onclick="selectStudent(
+                              '<?php echo $row['id_number']; ?>',
+                              '<?php echo $row['first_name'].' '.$row['middle_name'].' '.$row['last_name']; ?>'
+                          )">
+                          Sit In
+                      </button>
+                  </td>
+              </tr>
               <?php endwhile; ?>
             </tbody>
           </table>
@@ -374,7 +394,7 @@ background:#f0f0f0;
 <input type="text" name="id_number" required placeholder="Enter student ID" />
 
 <label>Student Name</label>
-<input type="text" name="student_name">
+<input type="text" name="student_name" readonly>
 
 <label>Purpose</label>
 <select name="purpose" required>
@@ -531,6 +551,18 @@ backgroundColor:['#ff6384','#36a2eb','#ffce56','#4bc0c0','#9966ff']
 <?php if ($searchResults !== null): ?>
 document.getElementById("searchModal").style.display = "block";
 <?php endif; ?>
+
+function selectStudent(id, name){
+    // Close search modal
+    document.getElementById("searchModal").style.display = "none";
+
+    // Open sit-in modal
+    document.getElementById("sitInModal").style.display = "block";
+
+    // Autofill data
+    document.querySelector('input[name="id_number"]').value = id;
+    document.querySelector('input[name="student_name"]').value = name;
+}
 </script>
 
 </body>
