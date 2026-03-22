@@ -1,34 +1,75 @@
-    <?php
-    session_start();
-    include "config.php";
+   <?php
+session_start();
+include "config.php";
 
-    // Default to null for search results
-    $searchResults = null;
+/* TIMEOUT HANDLER */
+if(isset($_POST['timeout'])){
+    $id = $_POST['record_id'];
 
-    // Handle Search
-    if (isset($_POST['search'])) {
-        $keyword = "%" . trim($_POST['keyword']) . "%";
-
-        // Prepare and execute search query
-        $stmt = $conn->prepare("SELECT * FROM students WHERE 
-                                id_number LIKE ? 
-                                OR first_name LIKE ? 
-                                OR middle_name LIKE ? 
-                                OR last_name LIKE ? 
-                                OR CONCAT(first_name, ' ', middle_name, ' ', last_name) LIKE ?");
-        $stmt->bind_param("sssss", $keyword, $keyword, $keyword, $keyword, $keyword);
-        $stmt->execute();
-        $searchResults = $stmt->get_result(); // Store the result of the query
-    }
-
-    // Fetch sit-in records
-    $result = $conn->query(" 
-        SELECT s.id, s.id_number, st.first_name, st.middle_name, st.last_name, s.purpose, s.lab, st.sessions_remaining, s.status, s.time_in, s.time_out
-        FROM sitin_records s
-        LEFT JOIN students st ON s.id_number = st.id_number
-        ORDER BY s.time_in DESC
+    $stmt = $conn->prepare("
+        UPDATE sitin_records 
+        SET time_out = NOW(),
+            status = 'Ended'
+        WHERE id = ?
     ");
-    ?>
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+}
+
+/* FETCH SIT-IN RECORDS FIRST */
+$result = $conn->query(" 
+    SELECT s.id, s.id_number, st.first_name, st.middle_name, st.last_name, 
+           s.purpose, s.lab, st.sessions_remaining, 
+           s.status, s.time_in, s.time_out
+    FROM sitin_records s
+    LEFT JOIN students st ON s.id_number = st.id_number
+    ORDER BY s.time_in DESC
+");
+
+/* AJAX HANDLER */
+if(isset($_GET['ajax'])){
+    while($row = $result->fetch_assoc()){
+?>
+<tr>
+    <td><?php echo $row['id']; ?></td>
+    <td><?php echo $row['id_number']; ?></td>
+    <td><?php echo $row['first_name'].' '.$row['middle_name'].' '.$row['last_name']; ?></td>
+    <td><?php echo $row['purpose']; ?></td>
+    <td><?php echo $row['lab']; ?></td>
+    <td><?php echo $row['sessions_remaining']; ?></td>
+
+    <td class="<?php echo ($row['status']=='Active') ? 'status-active' : 'status-ended'; ?>">
+        <?php echo $row['status']; ?>
+    </td>
+
+    <td><?php echo date("M d, Y h:i A", strtotime($row['time_in'])); ?></td>
+
+    <td>
+        <?php echo $row['time_out']
+        ? date("M d, Y h:i A", strtotime($row['time_out']))
+        : '-'; ?>
+    </td>
+
+    <td>
+    <?php if($row['status']=='Active'): ?>
+        <form method="POST">
+            <input type="hidden" name="record_id" value="<?php echo $row['id']; ?>">
+            <button type="submit" name="timeout"
+                class="search-btn"
+                style="background:#dc3545;">
+                Logout
+            </button>
+        </form>
+    <?php else: ?>
+        -
+    <?php endif; ?>
+    </td>
+</tr>
+<?php
+    }
+    exit();
+}
+?>
 
     <!DOCTYPE html>
     <html lang="en">
@@ -509,9 +550,11 @@ table tr:hover {
         <th>Status</th>
         <th>Time In</th>
         <th>Time Out</th>
+        <th>Action</th>
         </tr>
 
-        <?php while ($row = $result->fetch_assoc()) { ?>
+      <tbody id="sitInTableBody">
+        <?php while($row = $result->fetch_assoc()): ?>
         <tr>
             <td><?php echo $row['id']; ?></td>
             <td><?php echo $row['id_number']; ?></td>
@@ -519,13 +562,36 @@ table tr:hover {
             <td><?php echo $row['purpose']; ?></td>
             <td><?php echo $row['lab']; ?></td>
             <td><?php echo $row['sessions_remaining']; ?></td>
+
             <td class="<?php echo ($row['status'] == 'Active') ? 'status-active' : 'status-ended'; ?>">
-            <?php echo $row['status']; ?>
+                <?php echo $row['status']; ?>
             </td>
+
             <td><?php echo date("M d, Y h:i A", strtotime($row['time_in'])); ?></td>
-            <td><?php echo $row['time_out'] ? date("M d, Y h:i A", strtotime($row['time_out'])) : '-'; ?></td>
+
+            <td>
+                <?php echo $row['time_out'] 
+                ? date("M d, Y h:i A", strtotime($row['time_out'])) 
+                : '-'; ?>
+            </td>
+
+            <td>
+                <?php if($row['status'] == 'Active'): ?>
+                <form method="POST">
+                    <input type="hidden" name="record_id" value="<?php echo $row['id']; ?>">
+                    <button type="submit" name="timeout"
+                        class="search-btn"
+                        style="background:#dc3545;">
+                        Logout
+                    </button>
+                </form>
+                <?php else: ?>
+                -
+                <?php endif; ?>
+            </td>
         </tr>
-        <?php } ?>
+        <?php endwhile; ?>
+        </tbody>
     </table>
     </div>
     <!-- SIT-IN MODAL -->
@@ -609,6 +675,21 @@ table tr:hover {
     <?php if ($searchResults !== null): ?>
     document.getElementById("searchModal").classList.add("show");
     <?php endif; ?>
+
+    // Function to reload sit-in table
+function reloadSitInRecords() {
+    fetch('view_sitin_records.php?ajax=1')
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById('sitInTableBody').innerHTML = data;
+        });
+}
+
+// Refresh every 10 seconds
+setInterval(reloadSitInRecords, 10000);
+
+// Optional: refresh immediately after page load
+window.addEventListener('load', reloadSitInRecords);
 </script>
 
     </html> 

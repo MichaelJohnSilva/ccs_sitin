@@ -243,6 +243,17 @@ body {
     </div>
 
     <div class="form-group">
+    <select id="yearLevel" name="yearLevel" required>
+      <option value="" disabled selected hidden>-- Select Year Level --</option>
+      <option value="1">1st Year</option>
+      <option value="2">2nd Year</option>
+      <option value="3">3rd Year</option>
+      <option value="4">4th Year</option>
+    </select>
+    <label for="yearLevel">Year Level</label>
+   </div>
+
+    <div class="form-group">
       <select id="course" name="course" required>
         <option value="" disabled selected hidden>-- Select Course --</option>
         <option value="BS Accountancy">BS Accountancy</option>
@@ -267,7 +278,7 @@ body {
       </select>
       <label for="course">Course</label>
     </div>
-
+    
     <div class="form-group">
       <input type="password" id="password" name="password" placeholder=" " required>
       <label for="password">Password</label>

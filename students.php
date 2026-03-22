@@ -2,6 +2,84 @@
 session_start();
 include "config.php";
 
+/* ADD STUDENT */
+if(isset($_POST['add_student'])){
+    $id = $_POST['id_number'];
+    $first = $_POST['first_name'];
+    $middle = $_POST['middle_name'];
+    $last = $_POST['last_name'];
+    $year = $_POST['year_level'];
+    $course = $_POST['course'];
+
+    $email = $_POST['email'];
+    $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
+
+    $remaining = 30;
+
+    $stmt = $conn->prepare("INSERT INTO students 
+        (id_number, first_name, middle_name, last_name, year_level, course, sessions_remaining, email, password, role)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'student')");
+
+    $stmt->bind_param(
+        "ssssssiss",
+        $id,
+        $first,
+        $middle,
+        $last,
+        $year,
+        $course,
+        $remaining,
+        $email,
+        $password
+    );
+
+    $stmt->execute();
+
+    echo "<script>location.href='students.php';</script>";
+}
+
+/* RESET ALL SESSIONS */
+if(isset($_POST['reset_sessions'])){
+
+    $conn->query("UPDATE students SET sessions_remaining = 30 WHERE role != 'admin'");
+
+    echo "<script>alert('All sessions reset successfully!');</script>";
+    echo "<script>location.href='students.php';</script>";
+}
+
+/* DELETE STUDENT */
+if(isset($_POST['delete_student'])){
+    $id = $_POST['delete_id'];
+
+    $stmt = $conn->prepare("DELETE FROM students WHERE id_number = ?");
+    $stmt->bind_param("s", $id);
+    $stmt->execute();
+
+    echo "<script>location.href='students.php';</script>";
+}
+
+/* UPDATE STUDENT */
+if(isset($_POST['update_student'])){
+    $id = $_POST['edit_id'];
+    $first = $_POST['edit_first'];
+    $middle = $_POST['edit_middle'];
+    $last = $_POST['edit_last'];
+    $year = $_POST['edit_year'];
+    $course = $_POST['edit_course'];
+    $remaining = $_POST['edit_remaining'];
+
+    $stmt = $conn->prepare("
+        UPDATE students 
+        SET first_name=?, middle_name=?, last_name=?, 
+            year_level=?, course=?, sessions_remaining=? 
+        WHERE id_number=?
+    ");
+    $stmt->bind_param("sssssds", $first, $middle, $last, $year, $course, $remaining, $id);
+    $stmt->execute();
+
+    echo "<script>location.href='students.php';</script>";
+}
+
 /* FETCH ALL STUDENTS (DEFAULT VIEW) */
 $students = $conn->query("SELECT * FROM students WHERE role != 'admin'");
 
@@ -309,6 +387,146 @@ table tr:hover {
     outline: none;
 }
 
+/* ========================= */
+/* ADD STUDENT BUTTON         */
+/* ========================= */
+.btn-add {
+    background: linear-gradient(135deg, #0d6efd, #0a58ca);
+    color: #fff;
+    font-weight: 600;
+    font-size: 16px;
+    padding: 12px 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(13,110,253,0.3);
+}
+
+.btn-add:hover {
+    background: linear-gradient(135deg, #0b5ed7, #084298);
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 6px 18px rgba(13,110,253,0.5);
+}
+
+/* ========================= */
+/* RESET ALL SESSIONS BUTTON  */
+/* ========================= */
+.btn-reset {
+    background: linear-gradient(135deg, #dc3545, #a71d2a);
+    color: #fff;
+    font-weight: 600;
+    font-size: 16px;
+    padding: 12px 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(220,53,69,0.3);
+}
+
+.btn-reset:hover {
+    background: linear-gradient(135deg, #bb2d3b, #7a121f);
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 6px 18px rgba(220,53,69,0.5);
+}
+
+/* ========================= */
+/* ADD STUDENT MODAL          */
+/* ========================= */
+#addStudentModal .modal-content {
+    width: 600px;
+    max-width: 90%;
+    padding: 30px;
+    border-radius: 12px;
+    background: linear-gradient(145deg, #f4f6f9, #e0e7f1);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.25);
+    transform: translateY(-20px);
+    opacity: 0;
+    transition: all 0.4s ease;
+}
+
+#addStudentModal.show .modal-content {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+/* MODAL HEADER */
+#addStudentModal .modal-content h2 {
+    text-align: center;
+    font-size: 24px;
+    color: #0d6efd;
+    margin-bottom: 20px;
+}
+
+#addStudentModal .modal-content .close {
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    font-size: 26px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+
+#addStudentModal .modal-content .close:hover {
+    color: #dc3545;
+    transform: rotate(90deg) scale(1.2);
+}
+
+/* FORM INSIDE MODAL */
+#addStudentModal form input {
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+#addStudentModal form input:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 8px rgba(13,110,253,0.3);
+    outline: none;
+}
+
+/* SAVE BUTTON */
+#addStudentModal .btn-save {
+    background: linear-gradient(135deg, #0d6efd, #0a58ca);
+    color: #fff;
+    font-weight: 600;
+    font-size: 16px;
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 15px;
+}
+
+#addStudentModal .btn-save:hover {
+    background: linear-gradient(135deg, #0b5ed7, #084298);
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 6px 15px rgba(13,110,253,0.4);
+}
+
+/* ========================= */
+/* MODAL BACKGROUND          */
+/* ========================= */
+#addStudentModal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    transition: all 0.3s ease;
+}
+
+#addStudentModal.show {
+    display: flex;
+}
+
 /* BUTTON */
 .submit-btn {
     margin-top: 20px;
@@ -430,8 +648,12 @@ table tr:hover {
 
 <div class="container">
   <h1>Students Information</h1>
-    <button class="btn btn-add">Add Students</button>
-    <button class="btn btn-reset">Reset All Session</button>
+    <button class="btn-add" onclick="openAddStudent()">+ Add Student</button>
+    <form method="POST" style="display:inline;">
+    <button type="submit" name="reset_sessions" class="btn-reset">
+        Reset All Sessions
+    </button>
+</form>
 </div>
   <table>
     <tr>
@@ -460,12 +682,81 @@ table tr:hover {
     <td><?php echo $row['course']; ?></td>
     <td><?php echo $row['sessions_remaining'] ?? 30; ?></td>
     <td>
-    <button class="btn edit">Edit</button>
-    <button class="btn delete">Delete</button>
+    <<button class="btn edit"
+        onclick="openEditStudent(
+        '<?php echo $row['id_number']; ?>',
+        '<?php echo $row['first_name']; ?>',
+        '<?php echo $row['middle_name']; ?>',
+        '<?php echo $row['last_name']; ?>',
+        '<?php echo $row['year_level']; ?>',
+        '<?php echo $row['course']; ?>',
+        '<?php echo $row['sessions_remaining']; ?>'
+        )">Edit</button>
+
+        <form method="POST" style="display:inline;">
+            <input type="hidden" name="delete_id" value="<?php echo $row['id_number']; ?>">
+            <button type="submit" name="delete_student" class="btn delete">
+                Delete
+            </button>
+        </form>
     </td>
   </tr>
   <?php } ?>
   </table>
+</div>
+
+<!-- ADD STUDENTS -->
+ <div id="addStudentModal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeAddStudent()">&times;</span>
+    <h2>Add Student</h2>
+
+   <form method="POST" style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+    <input type="text" name="id_number" placeholder="ID Number" required>
+    <input type="text" name="year_level" placeholder="Year Level" required>
+
+    <input type="text" name="first_name" placeholder="First Name" required>
+    <input type="text" name="course" placeholder="Course" required>
+
+    <input type="text" name="middle_name" placeholder="Middle Name">
+    <input type="text" name="last_name" placeholder="Last Name" required>
+
+    <input type="email" name="email" placeholder="Email" required>
+    <input type="password" name="password" placeholder="Password" required>
+
+    <!-- Full-width button -->
+    <button type="submit" name="add_student" class="btn-save" style="grid-column: 1 / -1; margin-top: 10px;">
+            Save Student
+    </button>
+    </form>
+  </div>
+</div>
+
+<div id="editStudentModal" class="modal">
+<div class="modal-content">
+<span class="close" onclick="closeEditStudent()">&times;</span>
+<h2>Edit Student</h2>
+
+<form method="POST" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+
+<input type="hidden" name="edit_id" id="edit_id">
+
+<input type="text" name="edit_first" id="edit_first" placeholder="First Name">
+<input type="text" name="edit_middle" id="edit_middle" placeholder="Middle Name">
+
+<input type="text" name="edit_last" id="edit_last" placeholder="Last Name">
+<input type="text" name="edit_year" id="edit_year" placeholder="Year Level">
+
+<input type="text" name="edit_course" id="edit_course" placeholder="Course">
+<input type="text" name="edit_remaining" id="edit_remaining" placeholder="Remaining Session">
+
+<button type="submit" name="update_student" 
+style="grid-column:1/-1;" class="submit-btn">
+Update Student
+</button>
+
+</form>
+</div>
 </div>
 
 <!-- SEARCH MODAL -->
@@ -629,6 +920,30 @@ window.onclick = function(event) {
 
 function closeSitInForm(){
     closeSitIn();
+}
+
+function openAddStudent(){
+    document.getElementById("addStudentModal").classList.add("show");
+}
+
+function closeAddStudent(){
+    document.getElementById("addStudentModal").classList.remove("show");
+}
+
+function openEditStudent(id, first, middle, last, year, course, remaining){
+    document.getElementById("editStudentModal").classList.add("show");
+
+    document.getElementById("edit_id").value = id;
+    document.getElementById("edit_first").value = first;
+    document.getElementById("edit_middle").value = middle;
+    document.getElementById("edit_last").value = last;
+    document.getElementById("edit_year").value = year;
+    document.getElementById("edit_course").value = course;
+    document.getElementById("edit_remaining").value = remaining;
+}
+
+function closeEditStudent(){
+    document.getElementById("editStudentModal").classList.remove("show");
 }
 
 <?php if ($searchResults !== null): ?>
