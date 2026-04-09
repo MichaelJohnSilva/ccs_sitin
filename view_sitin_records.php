@@ -11,7 +11,7 @@ if(isset($_POST['timeout'])){
         SET time_out = NOW(),
             status = 'Ended'
         WHERE id = ?
-    ");
+    ");a
     $stmt->bind_param("i", $id);
     $stmt->execute();
     
