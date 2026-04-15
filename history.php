@@ -17,7 +17,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_feedback'])) {
     $feedbackStmt->bind_param("isis", $record_id, $id_number, $rating, $comments);
     
     if ($feedbackStmt->execute()) {
-        $feedback_success = true;
+        header('Location: history.php?success=1');
+        exit();
     } else {
         $feedback_error = $feedbackStmt->error;
     }
@@ -39,9 +40,11 @@ $userIdNumber = $user['id_number'];
 
 $historyQuery = "
     SELECT s.id, s.id_number, st.first_name, st.middle_name, st.last_name, 
-           s.purpose, s.lab, s.status, s.time_in, s.time_out
+           s.purpose, s.lab, s.status, s.time_in, s.time_out,
+           f.id as feedback_id, f.rating as feedback_rating
     FROM sitin_records s
     LEFT JOIN students st ON s.id_number = st.id_number
+    LEFT JOIN feedback f ON s.id = f.record_id AND f.id_number = s.id_number
     WHERE s.id_number = ?
     ORDER BY s.time_in DESC
 ";
@@ -389,6 +392,17 @@ unset($conn);
             box-shadow: none;
         }
 
+        .btn-feedback.submitted {
+            background: linear-gradient(135deg, #38ef7d 0%, #11998e 100%);
+            color: white;
+            cursor: default;
+        }
+
+        .btn-feedback.submitted:hover {
+            transform: none;
+            box-shadow: none;
+        }
+
         /* ===== MODAL ===== */
         .modal {
             display: none;
@@ -578,6 +592,40 @@ unset($conn);
             font-size: 16px;
         }
 
+        /* ===== SUCCESS TOAST ===== */
+        .success-toast {
+            position: fixed;
+            top: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #38ef7d 0%, #11998e 100%);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 15px;
+            box-shadow: 0 10px 30px rgba(56, 239, 125, 0.4);
+            z-index: 10000;
+            animation: slideDown 0.4s ease, fadeOut 0.4s ease 3.5s forwards;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .success-toast span:first-child {
+            font-size: 18px;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
         /* ===== RESPONSIVE ===== */
         @media (max-width: 900px) {
             .navbar {
@@ -681,6 +729,12 @@ unset($conn);
                                     <button class="btn-feedback" disabled title="Available after ending your sit-in session">
                                         Feedback
                                     </button>
+                                <?php elseif (!is_null($row['feedback_id'])): $rating = intval($row['feedback_rating']); ?>
+                                    <button class="btn-feedback submitted" disabled title="Feedback already submitted">
+                                        <span style="display:flex;align-items:center;gap:4px;">
+                                            <span>★</span><?php echo $rating; ?>/5
+                                        </span>
+                                    </button>
                                 <?php else: ?>
                                     <button class="btn-feedback" onclick="openFeedback(<?php echo $row['id']; ?>, '<?php echo htmlspecialchars($row['id_number']); ?>')">
                                         Feedback
@@ -754,11 +808,17 @@ unset($conn);
             closeFeedback();
         }
     };
-    
-    <?php if (isset($feedback_success) && $feedback_success): ?>
+
+    <?php if (isset($_GET['success'])): ?>
         window.onload = function() {
-            alert('Thank you! Your feedback has been submitted successfully.');
-            window.location.href = 'history.php';
+            const successMsg = document.createElement('div');
+            successMsg.className = 'success-toast';
+            successMsg.innerHTML = '<span>✓</span> Thank you! Your feedback has been submitted successfully.';
+            document.body.appendChild(successMsg);
+            setTimeout(() => successMsg.remove(), 4000);
+            const url = new URL(window.location.href);
+            url.searchParams.delete('success');
+            window.history.replaceState({}, '', url);
         };
     <?php endif; ?>
     
