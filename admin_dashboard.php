@@ -87,6 +87,9 @@ $totalHours = $conn->query($totalHoursQuery)->fetch_assoc()['total'] ?? 0;
 $totalSessionsQuery = "SELECT COUNT(*) as total FROM sitin_records WHERE status = 'Ended' OR time_out IS NOT NULL";
 $totalSessions = $conn->query($totalSessionsQuery)->fetch_assoc()['total'] ?? 0;
 
+$currentSitinsQuery = "SELECT COUNT(*) as total FROM sitin_records WHERE status = 'Active'";
+$currentSitins = $conn->query($currentSitinsQuery)->fetch_assoc()['total'] ?? 0;
+
 $labStatsQuery = "SELECT lab, COUNT(*) as total_visits FROM sitin_records WHERE lab IS NOT NULL AND lab != '' GROUP BY lab ORDER BY total_visits DESC LIMIT 1";
 $mostVisitedLab = $conn->query($labStatsQuery)->fetch_assoc();
 
@@ -920,7 +923,6 @@ table tr:hover td {
 
 <div class="dashboard-card">
 
-<div class="dashboard-title">Statistics</div>
 
 <?php
 $current = $conn->query("SELECT COUNT(*) as total FROM sitin_records WHERE status='Active'");
@@ -938,16 +940,16 @@ $total_count   = $total->fetch_assoc()['total'];
         <div class="stat-label">Students Registered</div>
     </div>
     <div class="stat-card" style="background: linear-gradient(135deg, #11998e, #38ef7d);">
-        <div class="stat-number"><?php echo number_format($totalHours); ?></div>
-        <div class="stat-label">Total Hours</div>
+        <div class="stat-number"><?php echo $currentSitins; ?></div>
+        <div class="stat-label">Currently Sit-in</div>
     </div>
     <div class="stat-card" style="background: linear-gradient(135deg, #f093fb, #f5576c);">
         <div class="stat-number"><?php echo $totalSessions; ?></div>
         <div class="stat-label">Sessions Completed</div>
     </div>
     <div class="stat-card" style="background: linear-gradient(135deg, #4facfe, #00f2fe);">
-        <div class="stat-number" style="font-size: 28px;"><?php echo htmlspecialchars($mostVisitedLab['lab'] ?? 'N/A'); ?></div>
-        <div class="stat-label">Top Lab (<?php echo $mostVisitedLab['total_visits'] ?? 0; ?> visits)</div>
+        <div class="stat-number"><?php echo $totalSessions; ?></div>
+        <div class="stat-label">Total Sit In</div>
     </div>
 </div>
 
