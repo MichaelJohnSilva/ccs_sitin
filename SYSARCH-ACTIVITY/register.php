@@ -1,0 +1,526 @@
+<?php
+include "config.php";
+
+$message = "";
+$messageType = "";
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+    $idNumber = trim($_POST['idNumber']);
+    $lastName = trim($_POST['lastName']);
+    $firstName = trim($_POST['firstName']);
+    $middleName = trim($_POST['middleName']);
+    $yearLevel = trim($_POST['yearLevel']);
+    $course = trim($_POST['course']);
+    $email = trim($_POST['email']);
+    $password = trim($_POST['password']);
+    $repeatPassword = trim($_POST['repeatPassword']);
+    $address = trim($_POST['address']);
+
+    if ($password !== $repeatPassword) {
+        $message = "Passwords do not match!";
+        $messageType = "error";
+    } else {
+
+        $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+
+        $sql = "INSERT INTO students 
+            (id_number, last_name, first_name, middle_name, year_level, course, email, password, address)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("sssssssss", $idNumber, $lastName, $firstName, $middleName, $yearLevel, $course, $email, $hashedPassword, $address);
+
+        if ($stmt->execute()) {
+            echo "<script>
+                    alert('Registration successful!');
+                    window.location.href='login.php';
+                  </script>";
+            exit;
+        } else {
+            $message = "Error: " . $stmt->error;
+            $messageType = "error";
+        }
+
+        $stmt->close();
+        $conn->close();
+
+    }
+}
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CCS | Register</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="uclogo.png" type="image/png" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+
+/* ===== GENERAL STYLES ===== */
+body {
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+}
+
+/* ===== NAVBAR ===== */
+.topnav {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 40px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+#title {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+#uc {
+  height: 50px;
+  width: 50px;
+  border-radius: 50%;
+  transition: transform 0.4s ease;
+  box-shadow: 0 0 15px rgba(255,255,255,0.3);
+}
+
+#uc:hover {
+  transform: rotate(360deg) scale(1.1);
+}
+
+#title span {
+  color: #fff;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+/* ===== NAV LINKS ===== */
+.topnavInside ul {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+}
+
+.topnavInside ul li {
+  position: relative;
+}
+
+.topnavInside ul li a {
+  display: block;
+  padding: 12px 20px;
+  color: white;
+  text-decoration: none;
+  font-size: 15px;
+  transition: all 0.3s ease;
+  border-radius: 8px;
+  position: relative;
+}
+
+.topnavInside ul li a::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 3px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  transition: all 0.3s ease;
+  transform: translateX(-50%);
+  border-radius: 2px;
+}
+
+/* ✅ YOUR HOVER EFFECT */
+.topnavInside a:hover {
+  background: rgba(255,255,255,0.1);
+  color: white;
+}
+
+.topnavInside a:hover::before {
+  width: 80%;
+}
+
+/* ✅ YOUR ACTIVE EFFECT */
+.topnavInside a.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+/* ===== DROPDOWN ===== */
+.dropdown-content {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  min-width: 200px;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px);
+  transition: all 0.3s ease;
+  box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+  padding: 8px 0;
+}
+
+.dropdown-content li a {
+  padding: 12px 20px;
+  color: rgba(255,255,255,0.9);
+  transform: none;
+  border-left: 3px solid transparent;
+}
+
+.dropdown-content li a:hover {
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  border-left: 3px solid #667eea;
+  padding-left: 25px;
+}
+
+/* SHOW DROPDOWN */
+.dropdown:hover .dropdown-content {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+/* ===== MAIN CONTENT ===== */
+.content {
+  max-width: 720px;
+  margin: 70px auto;
+  padding: 50px 35px;
+  background: rgba(255,255,255,0.92);
+  border-radius: 20px;
+  box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+  text-align: center;
+  animation: fadeSlide 0.8s ease;
+}
+
+@keyframes fadeSlide {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===== FORM GRID ===== */
+.register-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+/* ===== FORM GROUP ===== */
+.form-group {
+  position: relative;
+  width: 100%;
+}
+
+/* ===== INPUT ===== */
+.form-group input {
+  width: 100%;
+  height: 55px;
+  padding: 20px 12px 8px;
+  border-radius: 10px;
+  border: 2px solid #e0e0e0;
+  font-size: 14px;
+  background: #fff;
+  box-sizing: border-box;
+  transition: 0.3s;
+  font-family: 'Poppins', sans-serif;
+}
+
+.form-group input:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 15px rgba(102,126,234,0.3);
+}
+
+/* ===== SELECT ===== */
+.form-group select {
+  width: 100%;
+  height: 55px;
+  padding: 22px 12px 6px;
+  border-radius: 10px;
+  border: 2px solid #e0e0e0;
+  font-size: 14px;
+  background: #fff;
+  appearance: none;
+  cursor: pointer;
+  transition: 0.3s;
+  font-family: 'Poppins', sans-serif;
+}
+
+.form-group select:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 15px rgba(102,126,234,0.3);
+}
+
+/* ===== LABEL ===== */
+.form-group label {
+  position: absolute;
+  left: 12px;
+  top: 18px;
+  font-size: 14px;
+  color: #777;
+  background: #fff;
+  padding: 0 5px;
+  transition: 0.25s;
+  pointer-events: none;
+}
+
+/* FLOAT INPUT */
+.form-group input:focus + label,
+.form-group input:not(:placeholder-shown) + label {
+  top: -8px;
+  font-size: 11px;
+  color: #667eea;
+}
+
+/* FIX SELECT */
+.form-group select + label {
+  top: -8px;
+  font-size: 11px;
+  color: #667eea;
+}
+
+/* ===== BUTTONS ===== */
+.button-group {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 15px;
+  margin-top: 25px;
+}
+
+.button-group button,
+.button-group a {
+  flex: 1;
+  padding: 14px;
+  border-radius: 10px;
+  border: none;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.3s ease;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* REGISTER BUTTON */
+.button-group button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.button-group button:hover {
+  background: linear-gradient(135deg, #5a6fd6 0%, #6a4190 100%);
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(102,126,234,0.5);
+}
+
+/* BACK BUTTON */
+.button-group a {
+  background: #6c757d;
+  text-decoration: none;
+}
+
+.button-group a:hover {
+  background: #5a6268;
+  transform: translateY(-4px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+}
+
+/* ===== MESSAGE ===== */
+.message {
+  padding: 15px;
+  margin-bottom: 20px;
+  border-radius: 10px;
+  font-weight: 500;
+}
+
+.message.error {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.message.success {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+/* ===== FOOTER ===== */
+.footer {
+  text-align: center;
+  padding: 20px;
+  background: linear-gradient(135deg, #1f1f1f, #2e2e2e);
+  color: white;
+  margin-top: 60px;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .register-form {
+    grid-template-columns: 1fr;
+  }
+
+  .topnav {
+    flex-direction: column;
+    height: auto;
+    padding: 10px;
+  }
+
+  .button-group {
+    flex-direction: column;
+  }
+}
+
+</style>
+  </head>
+  <body>
+
+    <!-- NAVBAR -->
+    <div class="topnav">
+      <div id="title">
+        <img src="uclogo.png" alt="uclogo" id="uc">
+        <span>College of Computer Studies Sit-in Monitoring System</span>
+      </div>
+      <div class="topnavInside">
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li class="dropdown">
+            <a href="#">Community &#9662;</a>
+            <ul class="dropdown-content">
+              <li><a href="events.html">Events</a></li>
+              <li><a href="clubs.html">Clubs</a></li>
+              <li><a href="forum.html">Forum</a></li>
+            </ul>
+          </li>
+          <li><a href="about.html">About</a></li>
+          <li><a href="login.php">Login</a></li>
+          <li><a class="active" href="register.php">Register</a></li>
+        </ul>
+      </div>
+    </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="content">
+    <h1>Create an Account</h1>
+    <p>Sign up to access the CCS Sit-in Monitoring System.</p>
+
+    <?php if ($message): ?>
+      <div class="message <?php echo $messageType; ?>">
+        <?php echo htmlspecialchars($message); ?>
+      </div>
+    <?php endif; ?>
+
+    <!-- REGISTER FORM -->
+    <form class="register-form" action="" method="POST">
+      <div class="form-group">
+        <input type="text" id="idNumber" name="idNumber" placeholder=" " required>
+        <label for="idNumber">ID Number</label>
+      </div>
+
+      <div class="form-group">
+        <input type="text" id="lastName" name="lastName" placeholder=" " required>
+        <label for="lastName">Last Name</label>
+      </div>
+
+      <div class="form-group">
+        <input type="text" id="firstName" name="firstName" placeholder=" " required>
+        <label for="firstName">First Name</label>
+      </div>
+
+      <div class="form-group">
+        <input type="text" id="middleName" name="middleName" placeholder=" ">
+        <label for="middleName">Middle Name</label>
+      </div>
+
+      <div class="form-group">
+      <select id="yearLevel" name="yearLevel" required>
+        <option value="" disabled selected hidden>-- Select Year Level --</option>
+        <option value="1">1st Year</option>
+        <option value="2">2nd Year</option>
+        <option value="3">3rd Year</option>
+        <option value="4">4th Year</option>
+      </select>
+      <label for="yearLevel">Year Level</label>
+    </div>
+
+      <div class="form-group">
+        <select id="course" name="course" required>
+          <option value="" disabled selected hidden>-- Select Course --</option>
+          <option value="BS Accountancy">BS Accountancy</option>
+          <option value="BS Business Administration">BS Business Administration</option>
+          <option value="BS Computer Science">BS Computer Science</option>
+          <option value="BS Information Technology">BS Information Technology</option>
+          <option value="BS Computer Engineering">BS Computer Engineering</option>
+          <option value="BS Criminology">BS Criminology</option>
+          <option value="BS Civil Engineering">BS Civil Engineering</option>
+          <option value="BS Electrical Engineering">BS Electrical Engineering</option>
+          <option value="BS Mechanical Engineering">BS Mechanical Engineering</option>
+          <option value="BS Industrial Engineering">BS Industrial Engineering</option>
+          <option value="BS Commerce">BS Commerce</option>
+          <option value="BS Hotel & Restaurant Management">BS Hotel & Restaurant Management</option>
+          <option value="BS Tourism Management">BS Tourism Management</option>
+          <option value="BS Elementary Education">BS Elementary Education</option>
+          <option value="BS Secondary Education">BS Secondary Education</option>
+          <option value="BS Customs Administration">BS Customs Administration</option>
+          <option value="BS Industrial Psychology">BS Industrial Psychology</option>
+          <option value="BS Real Estate Management">BS Real Estate Management</option>
+          <option value="BS Office Administration">BS Office Administration</option>
+        </select>
+        <label for="course">Course</label>
+      </div>
+      
+      <div class="form-group">
+        <input type="password" id="password" name="password" placeholder=" " required>
+        <label for="password">Password</label>
+      </div>
+
+      <div class="form-group">
+        <input type="password" id="repeatPassword" name="repeatPassword" placeholder=" " required>
+        <label for="repeatPassword">Repeat Password</label>
+      </div>
+
+      <div class="form-group">
+        <input type="email" id="email" name="email" placeholder=" " required>
+        <label for="email">Email</label>
+      </div>
+
+      <div class="form-group">
+        <input type="text" id="address" name="address" placeholder=" ">
+        <label for="address">Address</label>
+      </div>
+
+      <!-- BUTTONS -->
+      <div class="button-group">
+        <a href="index.html" class="back-btn">Back</a>
+        <button type="submit">Register</button>
+      </div>
+    </form>
+  </div>
+    <!-- FOOTER -->
+    <div class="footer">
+      <p>&copy; 2026 College of Computer Studies. All rights reserved.</p>
+    </div>
+
+  </body>
+  </html>
