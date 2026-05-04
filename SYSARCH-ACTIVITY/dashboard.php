@@ -69,6 +69,57 @@ if($notifications && $notifications->num_rows > 0){
 }
 $notifStmt->close();
 
+// Fetch sit-in summary for current user (before closing connection)
+$id_number = $user['id_number'];
+$summaryQuery = "
+    SELECT 
+        COUNT(*) as total_sessions,
+        SUM(TIMESTAMPDIFF(MINUTE, time_in, time_out)) as total_minutes,
+        AVG(TIMESTAMPDIFF(MINUTE, time_in, time_out)) as avg_minutes,
+        MAX(TIMESTAMPDIFF(MINUTE, time_in, time_out)) as max_minutes
+    FROM sitin_records 
+    WHERE id_number = ? AND status = 'Ended' AND time_out IS NOT NULL
+";
+$summaryStmt = $conn->prepare($summaryQuery);
+$summaryStmt->bind_param("s", $id_number);
+$summaryStmt->execute();
+$summaryResult = $summaryStmt->get_result();
+$summary = $summaryResult->fetch_assoc();
+$summaryStmt->close();
+
+$totalSessions = $summary['total_sessions'] ?? 0;
+$totalMinutes = $summary['total_minutes'] ?? 0;
+$avgMinutes = $summary['avg_minutes'] ?? 0;
+$maxMinutes = $summary['max_minutes'] ?? 0;
+
+$totalHours = $totalMinutes / 60;
+$avgHours = $avgMinutes / 60;
+$maxHours = $maxMinutes / 60;
+
+// Fetch leaderboard data
+$leaderboardQuery = "
+    SELECT 
+        s.id_number,
+        CONCAT(st.first_name, ' ', st.middle_name, ' ', st.last_name) as name,
+        COUNT(*) as total_sessions,
+        SUM(TIMESTAMPDIFF(MINUTE, s.time_in, s.time_out)) as total_minutes,
+        AVG(TIMESTAMPDIFF(MINUTE, s.time_in, s.time_out)) as avg_minutes,
+        MAX(TIMESTAMPDIFF(MINUTE, s.time_in, s.time_out)) as max_minutes
+    FROM sitin_records s
+    INNER JOIN students st ON s.id_number = st.id_number
+    WHERE s.status = 'Ended' AND s.time_out IS NOT NULL
+    GROUP BY s.id_number, st.first_name, st.middle_name, st.last_name
+    ORDER BY total_minutes DESC
+    LIMIT 10
+";
+$leaderboardResult = $conn->query($leaderboardQuery);
+$leaderboardData = [];
+if($leaderboardResult && $leaderboardResult->num_rows > 0) {
+    while($row = $leaderboardResult->fetch_assoc()) {
+        $leaderboardData[] = $row;
+    }
+}
+
 $conn->close();
 unset($conn);
 
@@ -331,16 +382,9 @@ body {
     font-size: 14px;
 }
 
-/* Header full width */
-.content h1,
-.content > p {
-    grid-column: 1 / -1;
-    text-align: center;
-    margin: 3px 0 10px 0;
-}
-
-/* ===== PROFILE CARD ===== */
+/* ===== LEFT COLUMN: PROFILE CARD ===== */
 .profile-card {
+    grid-column: 1 / 2;
     background: white;
     padding: 30px;
     border-radius: 20px;
@@ -446,11 +490,12 @@ body {
     box-shadow: 0 6px 20px rgba(56, 239, 125, 0.4);
 }
 
-/* ===== RIGHT SIDE WRAPPER ===== */
+/* ===== RIGHT COLUMN: ANNOUNCEMENTS + RULES ===== */
 .right-side {
+    grid-column: 2 / 3;
     display: flex;
     flex-direction: column;
-    gap: 12px; /* Tight gap between announcement and rules */
+    gap: 16px;
 }
 
 /* ===== ANNOUNCEMENTS ===== */
@@ -580,6 +625,83 @@ body {
     color: #667eea;
 }
 
+/* ===== REPORTS CARD ===== */
+.reports-card {
+    grid-column: 2 / 3;
+    background: white;
+    padding: 25px;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    transition: all 0.3s ease;
+}
+
+.reports-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 25px 70px rgba(0,0,0,0.35);
+}
+
+.reports-card h3 {
+    border-left: 5px solid #667eea;
+    padding-left: 12px;
+    margin: 0 0 20px 0;
+    color: #1a1a2e;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.reports-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.report-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 18px 12px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+    border-radius: 12px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(102, 126, 234, 0.15);
+    text-align: center;
+}
+
+.report-btn:hover {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+    border-color: transparent;
+}
+
+.report-btn:hover .report-icon,
+.report-btn:hover .report-label,
+.report-btn:hover .report-desc {
+    color: white;
+}
+
+.report-icon {
+    font-size: 28px;
+    margin-bottom: 8px;
+    transition: color 0.3s ease;
+}
+
+.report-label {
+    font-weight: 600;
+    font-size: 14px;
+    color: #1a1a2e;
+    margin-bottom: 4px;
+    transition: color 0.3s ease;
+}
+
+.report-desc {
+    font-size: 11px;
+    color: #666;
+    transition: color 0.3s ease;
+}
+
 /* ===== ERROR ===== */
 .error {
     background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
@@ -603,7 +725,9 @@ body {
 /* ===== ENTRY ANIMATION ===== */
 .profile-card,
 .announcement,
-.rules {
+.rules,
+.leaderboard,
+.reports-card {
     opacity: 0;
     transform: translateY(12px);
     animation: fadeUp 0.6s ease forwards;
@@ -612,6 +736,8 @@ body {
 .profile-card { animation-delay: 0.1s; }
 .announcement { animation-delay: 0.2s; }
 .rules { animation-delay: 0.3s; }
+.leaderboard { animation-delay: 0.4s; }
+.reports-card { animation-delay: 0.5s; }
 
 @keyframes fadeUp {
     to {
@@ -620,29 +746,81 @@ body {
     }
 }
 
-/* ===== RESPONSIVE ===== */
-@media (max-width: 900px) {
-    .content {
-        display: block;
-        padding: 15px;
-    }
+ @media (max-width: 900px) {
+     .content {
+         display: block;
+         padding: 15px;
+     }
+     
+     .profile-card {
+         position: relative;
+         margin-bottom: 20px;
+     }
+     
+     .right-side {
+         display: block;
+     }
+     
+     .announcement,
+     .rules {
+         max-height: none;
+         overflow: visible;
+         margin-top: 10px;
+     }
+     
+     .reports-card {
+         grid-column: 1 / -1;
+     }
+     
+     .reports-buttons {
+         grid-template-columns: repeat(4, 1fr);
+     }
+     
+     .leaderboard-header,
+     .leaderboard-row {
+         grid-template-columns: 60px 1fr;
+     }
+     
+     .leaderboard-header div:nth-child(3),
+     .leaderboard-header div:nth-child(4),
+     .leaderboard-header div:nth-child(5),
+     .leaderboard-header div:nth-child(6),
+     .leaderboard-row div:nth-child(3),
+     .leaderboard-row div:nth-child(4),
+     .leaderboard-row div:nth-child(5),
+     .leaderboard-row div:nth-child(6) {
+         display: none;
+     }
+  }
 
-    .profile-card {
-        position: relative;
-        margin-bottom: 20px;
-    }
-
-    .right-side {
-        display: block;
-    }
-
-    .announcement,
-    .rules {
-        max-height: none;
-        overflow: visible;
-        margin-top: 10px;
-    }
-}
+  @media (max-width: 600px) {
+      .leaderboard-header,
+      .leaderboard-row {
+          grid-template-columns: 60px;
+      }
+      
+      .leaderboard-header div:nth-child(2),
+      .leaderboard-header div:nth-child(3),
+      .leaderboard-header div:nth-child(4),
+      .leaderboard-header div:nth-child(5),
+      .leaderboard-header div:nth-child(6),
+      .leaderboard-row div:nth-child(2),
+      .leaderboard-row div:nth-child(3),
+      .leaderboard-row div:nth-child(4),
+      .leaderboard-row div:nth-child(5),
+      .leaderboard-row div:nth-child(6) {
+          display: none;
+      }
+      
+      .leaderboard-header div:first-child,
+      .leaderboard-row div:first-child {
+          text-align: left;
+      }
+      
+      .reports-buttons {
+          grid-template-columns: 1fr;
+      }
+  }
     </style>
 </head>
 <body>
@@ -701,89 +879,179 @@ function markRead(idNumber, redirect) {
 }
 </script>
 
-<!-- MAIN CONTENT -->
-<div class="content">
-    <!-- Welcome Banner -->
-    <div class="welcome-banner">
-        <h1>Welcome, <?php echo htmlspecialchars($user['first_name']); ?>!</h1>
-        <p>Manage your profile, view announcements, and make reservations</p>
-    </div>
-
-    <!-- LEFT: Profile Card -->
-    <div class="profile-card">
-        <img src="<?php echo !empty($user['photo']) ? $user['photo'] : 'default_avatar.png'; ?>" alt="Profile Photo">
-        <h2><?php echo htmlspecialchars($user['first_name'].' '.$user['middle_name'].' '.$user['last_name']); ?></h2>
-        <div class="profile-info">
-            <p><strong>Course:</strong> <?php echo htmlspecialchars($user['course']); ?></p>
-            <p><strong>Email:</strong> <?php echo htmlspecialchars($user['email']); ?></p>
-            <p><strong>Address:</strong> <?php echo htmlspecialchars($user['address']); ?></p>
-            <p><strong>Sessions:</strong> <?php echo htmlspecialchars($user['sessions_remaining'] ?? 30); ?> / 30</p>
+    <!-- MAIN CONTENT -->
+    <div class="content">
+        <!-- Welcome Banner (Full Width) -->
+        <div class="welcome-banner">
+            <h1>Welcome, <?php echo htmlspecialchars($user['first_name']); ?>!</h1>
+            <p>Manage your profile, view announcements, and make reservations</p>
         </div>
 
-        <!-- Photo Upload -->
-        <form action="dashboard.php" method="POST" enctype="multipart/form-data" class="upload-btn">
-            <label for="profile_photo">Choose Photo</label>
-            <input type="file" name="profile_photo" id="profile_photo" accept="image/*" required>
-            <button type="submit">Upload</button>
-        </form>
-        <?php if(!empty($uploadError)): ?>
-            <div class="error"><?php echo htmlspecialchars($uploadError); ?></div>
-        <?php endif; ?>
-    </div>
-
-    <!-- RIGHT SIDE: Announcements + Rules -->
-    <div class="right-side">
-        <!-- Announcements -->
-        <div class="announcement">
-            <h3>Announcements</h3>
-            <?php if($announcement_result && $announcement_result->num_rows > 0): ?>
-                <?php while($row = $announcement_result->fetch_assoc()): ?>
-                    <div class="announcement-item">
-                        <p><strong>CCS Admin | <?php echo date("Y-M-d", strtotime($row['created_at'])); ?></strong></p>
-                        <p><?php echo nl2br(htmlspecialchars($row['message'])); ?></p>
-                    </div>
-                <?php endwhile; ?>
-            <?php else: ?>
-                <div class="announcement-item">
-                    <p>No announcements yet.</p>
+        <!-- Leaderboard (Full Width) -->
+        <div class="leaderboard">
+            <h2>🏆 Sit-in Summary</h2>
+            <div class="leaderboard-table">
+                <div class="leaderboard-header">
+                    <div>Rank</div>
+                    <div>Name</div>
+                    <div>Total Hrs</div>
+                    <div>Sessions</div>
+                    <div>Avg (min)</div>
+                    <div>Longest (min)</div>
                 </div>
+                <div class="leaderboard-body">
+                    <?php
+                    // Display leaderboard data
+                    if(!empty($leaderboardData)):
+                        $rank = 1;
+                        foreach($leaderboardData as $row):
+                            $totalHours = $row['total_minutes'] > 0 ? $row['total_minutes'] / 60 : 0;
+                            $avgMinutes = $row['avg_minutes'] ?? 0;
+                            $maxMinutes = $row['max_minutes'] ?? 0;
+                    ?>
+                    <div class="leaderboard-row">
+                        <div><?php echo $rank++; ?></div>
+                        <div><?php echo htmlspecialchars($row['name']); ?></div>
+                        <div><?php echo number_format($totalHours, 2); ?> hrs</div>
+                        <div><?php echo $row['total_sessions']; ?></div>
+                        <div><?php echo round($avgMinutes, 1); ?> min</div>
+                        <div><?php echo round($maxMinutes, 1); ?> min</div>
+                    </div>
+                    <?php
+                        endforeach;
+                    else:
+                    ?>
+                    <div class="leaderboard-row">
+                        <div colspan="6">No sit-in records found.</div>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+
+        <!-- LEFT COLUMN: Profile Card -->
+        <div class="profile-card">
+            <img src="<?php echo !empty($user['photo']) ? $user['photo'] : 'default_avatar.png'; ?>" alt="Profile Photo">
+            <h2><?php echo htmlspecialchars($user['first_name'].' '.$user['middle_name'].' '.$user['last_name']); ?></h2>
+            <div class="profile-info">
+                <p><strong>Course:</strong> <?php echo htmlspecialchars($user['course']); ?></p>
+                <p><strong>Email:</strong> <?php echo htmlspecialchars($user['email']); ?></p>
+                <p><strong>Address:</strong> <?php echo htmlspecialchars($user['address']); ?></p>
+                <p><strong>Sessions:</strong> <?php echo htmlspecialchars($user['sessions_remaining'] ?? 30); ?> / 30</p>
+            </div>
+
+            <!-- Photo Upload -->
+            <form action="dashboard.php" method="POST" enctype="multipart/form-data" class="upload-btn">
+                <label for="profile_photo">Choose Photo</label>
+                <input type="file" name="profile_photo" id="profile_photo" accept="image/*" required>
+                <button type="submit">Upload</button>
+            </form>
+            <?php if(!empty($uploadError)): ?>
+                <div class="error"><?php echo htmlspecialchars($uploadError); ?></div>
             <?php endif; ?>
         </div>
 
-        <!-- Rules & Regulations -->
-        <div class="rules">
-            <h3>Rules and Regulations</h3>
-            <div class="rules-header">
-                <p><strong>University of Cebu</strong></p>
-                <p>College of Information & Computer Studies</p>
+        <!-- RIGHT COLUMN: Announcements + Rules -->
+        <div class="right-side">
+            <!-- Announcements -->
+            <div class="announcement">
+                <h3>Announcements</h3>
+                <?php if($announcement_result && $announcement_result->num_rows > 0): ?>
+                    <?php while($row = $announcement_result->fetch_assoc()): ?>
+                        <div class="announcement-item">
+                            <p><strong>CCS Admin | <?php echo date("Y-M-d", strtotime($row['created_at'])); ?></strong></p>
+                            <p><?php echo nl2br(htmlspecialchars($row['message'])); ?></p>
+                        </div>
+                    <?php endwhile; ?>
+                <?php else: ?>
+                    <div class="announcement-item">
+                        <p>No announcements yet.</p>
+                    </div>
+                <?php endif; ?>
             </div>
-            <ol>
-                <li>Maintain silence, proper decorum, and discipline inside the laboratory. Mobile phones, walkmans and other personal pieces of equipment must be switched off.</li>
-                <li>Games are not allowed inside the lab. This includes computer-related games, card games and other games that may disturb the operation of the lab.</li>
-                <li>Surfing the Internet is allowed only with the permission of the instructor. Downloading and installing of software are strictly prohibited.</li>
-                <li>Getting access to other websites not related to the course (especially pornographic and illicit sites) is strictly prohibited.</li>
-                <li>Deleting computer files and changing the set-up of the computer is a major offense.</li>
-                <li>Observe computer time usage carefully. A fifteen-minute allowance is given for each use. Otherwise, the unit will be given to those who wish to "sit-in".</li>
-                <li>Observe proper decorum while inside the laboratory.<br>
-                a. Do not get inside the lab unless the instructor is present.<br>
-                b. All bags, knapsacks, and the likes must be deposited at the counter.<br>
-                c. Follow the seating arrangement of your instructor.<br>
-                d. At the end of class, all software programs must be closed.<br>
-                e. Return all chairs to their proper places after using.</li>
-                <li>Chewing gum, eating, drinking, smoking, and other forms of vandalism are prohibited inside the lab.</li>
-                <li>Anyone causing a continual disturbance will be asked to leave the lab. Acts or gestures offensive to the members of the community, including public display of physical intimacy, are not tolerated.</li>
-                <li>Persons exhibiting hostile or threatening behavior such as yelling, swearing, or disregarding requests made by lab personnel will be asked to leave the lab.</li>
-                <li>For serious offense, the lab personnel may call the Civil Security Office (CSU) for assistance.</li>
-                <li>Any technical problem or difficulty must be addressed to the laboratory supervisor, student assistant or instructor immediately.</li>
-            </ol>
-        </div>
-    </div>
 
-    <?php if(isset($_SESSION['last_logout_time'])): ?>
-<div style="padding:10px; background:#d4edda; color:#155724; margin:10px auto; max-width:600px; border-radius:5px; text-align:center;">
-    Admin last logged out at: <strong><?= $_SESSION['last_logout_time']; ?></strong>
-</div>
-<?php unset($_SESSION['last_logout_time']); endif; ?>
+            <!-- Rules & Regulations -->
+            <div class="rules">
+                <h3>Rules and Regulations</h3>
+                <div class="rules-header">
+                    <p><strong>University of Cebu</strong></p>
+                    <p>College of Information & Computer Studies</p>
+                </div>
+                <ol>
+                    <li>Maintain silence, proper decorum, and discipline inside the laboratory. Mobile phones, walkmans and other personal pieces of equipment must be switched off.</li>
+                    <li>Games are not allowed inside the lab. This includes computer-related games, card games and other games that may disturb the operation of the lab.</li>
+                    <li>Surfing the Internet is allowed only with the permission of the instructor. Downloading and installing of software are strictly prohibited.</li>
+                    <li>Getting access to other websites not related to the course (especially pornographic and illicit sites) is strictly prohibited.</li>
+                    <li>Deleting computer files and changing the set-up of the computer is a major offense.</li>
+                    <li>Observe computer time usage carefully. A fifteen-minute allowance is given for each use. Otherwise, the unit will be given to those who wish to "sit-in".</li>
+                    <li>Observe proper decorum while inside the laboratory.<br>
+                    a. Do not get inside the lab unless the instructor is present.<br>
+                    b. All bags, knapsacks, and the likes must be deposited at the counter.<br>
+                    c. Follow the seating arrangement of your instructor.<br>
+                    d. At the end of class, all software programs must be closed.<br>
+                    e. Return all chairs to their proper places after using.</li>
+                    <li>Chewing gum, eating, drinking, smoking, and other forms of vandalism are prohibited inside the lab.</li>
+                    <li>Anyone causing a continual disturbance will be asked to leave the lab. Acts or gestures offensive to the members of the community, including public display of physical intimacy, are not tolerated.</li>
+                    <li>Persons exhibiting hostile or threatening behavior such as yelling, swearing, or disregarding requests made by lab personnel will be asked to leave the lab.</li>
+                    <li>For serious offense, the lab personnel may call the Civil Security Office (CSU) for assistance.</li>
+                    <li>Any technical problem or difficulty must be addressed to the laboratory supervisor, student assistant or instructor immediately.</li>
+                </ol>
+            </div>
+
+            <!-- Generate Reports -->
+            <div class="reports-card">
+                <h3>📊 Generate Reports</h3>
+                <div class="reports-buttons">
+                    <a href="generate_report.php?type=personal&format=html" class="report-btn" target="_blank">
+                        <span class="report-icon">📄</span>
+                        <span class="report-label">My Sit-in Report</span>
+                        <span class="report-desc">View complete history</span>
+                    </a>
+                    <a href="generate_report.php?type=personal&format=pdf" class="report-btn" target="_blank">
+                        <span class="report-icon">📥</span>
+                        <span class="report-label">Download PDF</span>
+                        <span class="report-desc">Save as PDF file</span>
+                    </a>
+                    <a href="generate_report.php?type=summary&format=html" class="report-btn" target="_blank">
+                        <span class="report-icon">📈</span>
+                        <span class="report-label">Summary Stats</span>
+                        <span class="report-desc">Overview &amp; statistics</span>
+                    </a>
+                    <a href="generate_report.php?type=summary&format=pdf" class="report-btn" target="_blank">
+                        <span class="report-icon">📥</span>
+                        <span class="report-label">Summary PDF</span>
+                        <span class="report-desc">Download summary</span>
+                    </a>
+                    <a href="generate_report.php?type=monthly&format=html" class="report-btn" target="_blank">
+                        <span class="report-icon">📅</span>
+                        <span class="report-label">Monthly Report</span>
+                        <span class="report-desc">Breakdown by month</span>
+                    </a>
+                    <a href="generate_report.php?type=monthly&format=pdf" class="report-btn" target="_blank">
+                        <span class="report-icon">📥</span>
+                        <span class="report-label">Monthly PDF</span>
+                        <span class="report-desc">Download monthly</span>
+                    </a>
+                    <a href="generate_report.php?type=csv" class="report-btn" target="_blank">
+                        <span class="report-icon">💾</span>
+                        <span class="report-label">Export CSV</span>
+                        <span class="report-desc">Download spreadsheet</span>
+                    </a>
+                    <a href="generate_report.php?type=personal&format=pdf" class="report-btn" target="_blank">
+                        <span class="report-icon">📚</span>
+                        <span class="report-label">Full Report PDF</span>
+                        <span class="report-desc">Complete history PDF</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <?php if(isset($_SESSION['last_logout_time'])): ?>
+        <div style="padding:10px; background:#d4edda; color:#155724; margin:10px auto; max-width:600px; border-radius:5px; text-align:center; grid-column: 1 / -1;">
+            Admin last logged out at: <strong><?= $_SESSION['last_logout_time']; ?></strong>
+        </div>
+        <?php unset($_SESSION['last_logout_time']); endif; ?>
+    </div>
 
 </body>
 </html>

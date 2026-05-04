@@ -83,108 +83,107 @@ body {
   font-size: 20px;
 }
 
-#uc {
-  height: 50px;
-  width: 50px;
-  border-radius: 50%;
-  transition: transform 0.4s ease;
-  box-shadow: 0 0 15px rgba(255,255,255,0.3);
-}
+ #uc {
+    height: 50px;
+    width: 50px;
+    border-radius: 50%;
+    transition: transform 0.4s ease;
+    box-shadow: 0 0 15px rgba(255,255,255,0.3);
+  }
 
-#uc:hover {
-  transform: rotate(360deg) scale(1.1);
-}
+  #uc:hover {
+    transform: rotate(360deg) scale(1.1);
+  }
 
-#uc:hover {
-  transform: rotate(15deg) scale(1.05);
-}
+  .topnavInside ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    gap: 25px;
+  }
 
-.topnavInside ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  gap: 25px;
-}
+  .topnavInside li {
+    position: relative;
+  }
 
-.topnavInside li {
-  position: relative;
-  perspective: 600px;
-}
+  .topnavInside a {
+    display: block;
+    color: white;
+    padding: 14px 18px;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 500;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+  }
 
-.topnavInside a {
-  display: block;
-  color: white;
-  padding: 14px 18px;
-  text-decoration: none;
-  font-size: 16px;
-  font-weight: 500;
-  border-radius: 6px;
-  transition: 
-    color 0.3s ease, 
-    background-color 0.3s ease,
-    box-shadow 0.3s ease,
-    transform 0.3s ease;
-  transform-style: preserve-3d;
-}
+  .topnavInside a:hover {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  }
 
-.topnavInside a:hover {
-  background-color: #0056b3;
-  color: white;
-  transform: translateY(-3px);
-  box-shadow: 0 6px 15px rgba(0, 86, 179, 0.6);
-}
+  .topnavInside a.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
+  }
 
-.topnavInside a.active {
-  background-color: #003f7f;
-  color: white;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 63, 127, 0.5);
-}
+  /* ===== DROPDOWN MENU ===== */
+  .dropdown {
+    position: relative;
+  }
 
-/* ===== DROPDOWN MENU ===== */
-.dropdown-content {
-  display: none;
-  position: absolute;
-  top: 40px;
-  right: 0;
-  background: #fff;
-  min-width: 180px;
-  box-shadow: 0 15px 35px rgba(0,0,0,0.25);
-  border-radius: 10px;
-  overflow: hidden;
-  opacity: 0;
-  transform: translateY(-10px);
-  transition: transform 0.35s ease, opacity 0.35s ease;
-  pointer-events: none;
-  list-style: none;
-  padding: 0;
-  z-index: 1100;
-}
+  .dropdown > a {
+    position: relative;
+  }
 
-.dropdown:hover .dropdown-content {
-  display: block;
-  transform: translateY(0);
-  opacity: 1;
-  pointer-events: auto;
-}
+  .dropdown-content {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    min-width: 180px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+    border-radius: 10px;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+    pointer-events: none;
+    z-index: 1100;
+    list-style: none;
+    padding: 8px 0;
+    margin-top: 8px;
+  }
 
-.dropdown-content li a {
-  display: block;
-  padding: 12px 18px;
-  font-size: 14px;
-  color: #333;
-  text-decoration: none;
-  transition: background 0.3s, transform 0.3s, color 0.3s;
-  border-left: 3px solid transparent;
-}
+  .dropdown:hover .dropdown-content {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
 
-.dropdown-content li a:hover {
-  background: #f1f1f1;
-  color: #007bff;
-  transform: translateX(5px);
-  border-left-color: #007bff;
-}
+  .dropdown-content li {
+    margin: 0;
+    padding: 0;
+  }
+
+  .dropdown-content li a {
+    display: block;
+    padding: 12px 18px;
+    font-size: 14px;
+    color: rgba(255,255,255,0.9);
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border-left: 3px solid transparent;
+  }
+
+  .dropdown-content li a:hover {
+    background: rgba(255,255,255,0.1);
+    color: white;
+    border-left-color: #667eea;
+    padding-left: 22px;
+  }
 
 /* ===== MAIN CONTENT ===== */
 .content {
@@ -354,25 +353,39 @@ body::before {
 }
 
 /* ===== RESPONSIVE ===== */
-@media (max-width: 768px) {
-  .content {
-    width: 90%;
-    padding: 35px 25px;
-  }
-  .button-group {
-    flex-direction: column;
-    gap: 15px;
-    justify-content: center;
-  }
-  .topnavInside ul {
-    flex-direction: column;
-    gap: 12px;
-  }
-  .topnav {
-    flex-direction: column;
-    padding: 15px;
-  }
-}
+ @media (max-width: 768px) {
+   .content {
+     width: 90%;
+     padding: 35px 25px;
+   }
+   .button-group {
+     flex-direction: column;
+     gap: 15px;
+     justify-content: center;
+   }
+   .topnavInside ul {
+     flex-direction: column;
+     gap: 12px;
+     width: 100%;
+   }
+   .dropdown-content {
+     position: static;
+     opacity: 1;
+     visibility: visible;
+     transform: none;
+     box-shadow: none;
+     background: rgba(255,255,255,0.1);
+     margin-top: 5px;
+     display: none;
+   }
+   .dropdown:hover .dropdown-content {
+     display: flex;
+   }
+   .topnav {
+     flex-direction: column;
+     padding: 15px;
+   }
+ }
   </style>
 </head>
 <body>
@@ -385,9 +398,9 @@ body::before {
     </div>
     <div class="topnavInside">
       <ul>
-        <li><a href="index.html">Home</a></li>
+        <li><a href="index.php">Home</a></li>
         <li class="dropdown">
-          <a href="#">Community &amp;#9662;</a>
+          <a href="#">Community &#9662;</a>
           <ul class="dropdown-content">
             <li><a href="events.html">Events</a></li>
             <li><a href="clubs.html">Clubs</a></li>
@@ -424,7 +437,7 @@ body::before {
 
       <!-- BUTTONS CONTAINER -->
       <div class="button-group">
-        <a href="index.html" class="back-btn">Back</a>
+        <a href="index.php" class="back-btn">Back</a>
         <button type="submit" class="login-button">Login</button>
       </div>
     </form>

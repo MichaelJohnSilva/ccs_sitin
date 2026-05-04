@@ -97,6 +97,16 @@ body{
             <p><strong>Address:</strong> <?php echo $user['address']; ?></p>
             <p><strong>Status:</strong> <?php echo isset($user['status']) ? $user['status'] : 'active'; ?></p>
             <p><strong>Registered At:</strong> <?php echo $user['created_at']; ?></p>
+            
+            <!-- Sit-in Summary -->
+            <div style="background:#f0f8ff; padding:15px; border-radius:10px; margin:20px 0;">
+                <p><strong>Sit-in Summary:</strong></p>
+                <p><strong>Total Sessions:</strong> <?php echo isset($totalSessions) ? $totalSessions : 0; ?></p>
+                <p><strong>Total Hours:</strong> <?php echo isset($totalHours) ? number_format($totalHours, 2) : '0.00'; ?></p>
+                <p><strong>Avg Session:</strong> <?php echo isset($avgHours) ? number_format($avgHours, 2) : '0.00'; ?> hrs</p>
+                <p><strong>Longest Session:</strong> <?php echo isset($maxHours) ? number_format($maxHours, 2) : '0.00'; ?> hrs</p>
+            </div>
+
         <a href="logout.php" class="logout-btn">Logout</a>
 
     </div>

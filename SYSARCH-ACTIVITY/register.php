@@ -118,12 +118,18 @@ body {
   position: relative;
 }
 
+/* Dropdown parent */
+.dropdown {
+  position: relative;
+}
+
 .topnavInside ul li a {
   display: block;
   padding: 12px 20px;
   color: white;
   text-decoration: none;
   font-size: 15px;
+  font-weight: 500;
   transition: all 0.3s ease;
   border-radius: 8px;
   position: relative;
@@ -159,6 +165,10 @@ body {
 }
 
 /* ===== DROPDOWN ===== */
+.dropdown {
+  position: relative;
+}
+
 .dropdown-content {
   position: absolute;
   top: 100%;
@@ -175,6 +185,8 @@ body {
   transition: all 0.3s ease;
   box-shadow: 0 15px 35px rgba(0,0,0,0.4);
   padding: 8px 0;
+  z-index: 1100;
+  margin-top: 8px;
 }
 
 .dropdown-content li a {
@@ -387,6 +399,28 @@ body {
     padding: 10px;
   }
 
+  .topnavInside ul {
+    flex-direction: column;
+    width: 100%;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .dropdown-content {
+    position: static;
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    box-shadow: none;
+    background: rgba(255,255,255,0.1);
+    margin-top: 5px;
+    display: none;
+  }
+
+  .dropdown:hover .dropdown-content {
+    display: flex;
+  }
+
   .button-group {
     flex-direction: column;
   }
@@ -404,7 +438,7 @@ body {
       </div>
       <div class="topnavInside">
         <ul>
-          <li><a href="index.html">Home</a></li>
+          <li><a href="index.php">Home</a></li>
           <li class="dropdown">
             <a href="#">Community &#9662;</a>
             <ul class="dropdown-content">
@@ -512,7 +546,7 @@ body {
 
       <!-- BUTTONS -->
       <div class="button-group">
-        <a href="index.html" class="back-btn">Back</a>
+        <a href="index.php" class="back-btn">Back</a>
         <button type="submit">Register</button>
       </div>
     </form>
