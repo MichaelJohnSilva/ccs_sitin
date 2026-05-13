@@ -625,81 +625,100 @@ body {
     color: #667eea;
 }
 
-/* ===== REPORTS CARD ===== */
-.reports-card {
-    grid-column: 2 / 3;
+/* ===== LEADERBOARD ===== */
+.leaderboard {
+    grid-column: 1 / -1;
     background: white;
     padding: 25px;
     border-radius: 20px;
     box-shadow: 0 20px 60px rgba(0,0,0,0.3);
     transition: all 0.3s ease;
+    margin-bottom: 16px;
 }
 
-.reports-card:hover {
+.leaderboard:hover {
     transform: translateY(-3px);
-    box-shadow: 0 25px 70px rgba(0,0,0,0.35);
+    box-shadow: 0 25px 70px rgba(0,0,0,0.4);
 }
 
-.reports-card h3 {
+.leaderboard h2 {
     border-left: 5px solid #667eea;
     padding-left: 12px;
     margin: 0 0 20px 0;
     color: #1a1a2e;
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 600;
 }
 
-.reports-buttons {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
+.leaderboard-table {
+    width: 100%;
 }
 
-.report-btn {
-    display: flex;
-    flex-direction: column;
+.leaderboard-header {
+    display: grid;
+    grid-template-columns: 1fr 100px 100px 100px 100px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    padding: 12px 15px;
+    border-radius: 10px;
+    font-weight: 600;
+    color: #1a1a2e;
+    font-size: 13px;
+    margin-bottom: 8px;
+}
+
+.leaderboard-body {
+    max-height: 350px;
+    overflow-y: auto;
+}
+
+.leaderboard-row {
+    display: grid;
+    grid-template-columns: 1fr 100px 100px 100px 100px;
+    padding: 12px 15px;
+    border-bottom: 1px solid rgba(102, 126, 234, 0.1);
+    transition: all 0.2s ease;
     align-items: center;
-    justify-content: center;
-    padding: 18px 12px;
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
-    border-radius: 12px;
-    text-decoration: none;
-    transition: all 0.3s ease;
-    border: 1px solid rgba(102, 126, 234, 0.15);
+    font-size: 13px;
+    color: #444;
+}
+
+.leaderboard-row:last-child {
+    border-bottom: none;
+}
+
+.leaderboard-row:hover {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+    transform: translateX(5px);
+}
+
+.leaderboard-row div:first-child {
+    font-weight: 600;
+    color: #1a1a2e;
+    text-align: left;
+}
+
+.leaderboard-row div:nth-child(2) {
+    font-weight: 500;
+    color: #1a1a2e;
+}
+
+.leaderboard-row div {
     text-align: center;
 }
 
-.report-btn:hover {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
-    border-color: transparent;
-}
-
-.report-btn:hover .report-icon,
-.report-btn:hover .report-label,
-.report-btn:hover .report-desc {
-    color: white;
-}
-
-.report-icon {
-    font-size: 28px;
-    margin-bottom: 8px;
-    transition: color 0.3s ease;
-}
-
-.report-label {
+.leaderboard-row div:last-child {
+    color: #f45c43;
     font-weight: 600;
-    font-size: 14px;
-    color: #1a1a2e;
-    margin-bottom: 4px;
-    transition: color 0.3s ease;
 }
 
-.report-desc {
-    font-size: 11px;
-    color: #666;
-    transition: color 0.3s ease;
+/* Scrollbar */
+.leaderboard-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.leaderboard-body::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 10px;
 }
 
 /* ===== ERROR ===== */
@@ -726,8 +745,7 @@ body {
 .profile-card,
 .announcement,
 .rules,
-.leaderboard,
-.reports-card {
+.leaderboard {
     opacity: 0;
     transform: translateY(12px);
     animation: fadeUp 0.6s ease forwards;
@@ -737,7 +755,6 @@ body {
 .announcement { animation-delay: 0.2s; }
 .rules { animation-delay: 0.3s; }
 .leaderboard { animation-delay: 0.4s; }
-.reports-card { animation-delay: 0.5s; }
 
 @keyframes fadeUp {
     to {
@@ -761,66 +778,55 @@ body {
          display: block;
      }
      
-     .announcement,
-     .rules {
-         max-height: none;
-         overflow: visible;
-         margin-top: 10px;
-     }
-     
-     .reports-card {
-         grid-column: 1 / -1;
-     }
-     
-     .reports-buttons {
-         grid-template-columns: repeat(4, 1fr);
-     }
-     
-     .leaderboard-header,
-     .leaderboard-row {
-         grid-template-columns: 60px 1fr;
-     }
-     
-     .leaderboard-header div:nth-child(3),
-     .leaderboard-header div:nth-child(4),
-     .leaderboard-header div:nth-child(5),
-     .leaderboard-header div:nth-child(6),
-     .leaderboard-row div:nth-child(3),
-     .leaderboard-row div:nth-child(4),
-     .leaderboard-row div:nth-child(5),
-     .leaderboard-row div:nth-child(6) {
-         display: none;
-     }
-  }
-
-  @media (max-width: 600px) {
-      .leaderboard-header,
-      .leaderboard-row {
-          grid-template-columns: 60px;
+      .announcement,
+      .rules {
+          max-height: none;
+          overflow: visible;
+          margin-top: 10px;
       }
       
-      .leaderboard-header div:nth-child(2),
+      .leaderboard-header,
+      .leaderboard-row {
+          grid-template-columns: 1fr 100px;
+      }
+      
       .leaderboard-header div:nth-child(3),
       .leaderboard-header div:nth-child(4),
       .leaderboard-header div:nth-child(5),
-      .leaderboard-header div:nth-child(6),
-      .leaderboard-row div:nth-child(2),
       .leaderboard-row div:nth-child(3),
       .leaderboard-row div:nth-child(4),
-      .leaderboard-row div:nth-child(5),
-      .leaderboard-row div:nth-child(6) {
+      .leaderboard-row div:nth-child(5) {
           display: none;
       }
+   }
       
-      .leaderboard-header div:first-child,
-      .leaderboard-row div:first-child {
-          text-align: left;
-      }
-      
-      .reports-buttons {
-          grid-template-columns: 1fr;
+      .leaderboard-header div:nth-child(3),
+      .leaderboard-header div:nth-child(4),
+      .leaderboard-header div:nth-child(5),
+      .leaderboard-row div:nth-child(3),
+      .leaderboard-row div:nth-child(4),
+      .leaderboard-row div:nth-child(5) {
+          display: none;
       }
   }
+
+   @media (max-width: 600px) {
+       .leaderboard-header,
+       .leaderboard-row {
+           grid-template-columns: 1fr;
+       }
+       
+        .leaderboard-header div:nth-child(2),
+        .leaderboard-header div:nth-child(3),
+        .leaderboard-header div:nth-child(4),
+        .leaderboard-header div:nth-child(5),
+        .leaderboard-row div:nth-child(2),
+        .leaderboard-row div:nth-child(3),
+        .leaderboard-row div:nth-child(4),
+        .leaderboard-row div:nth-child(5) {
+            display: none;
+        }
+   }
     </style>
 </head>
 <body>
@@ -892,7 +898,6 @@ function markRead(idNumber, redirect) {
             <h2>🏆 Sit-in Summary</h2>
             <div class="leaderboard-table">
                 <div class="leaderboard-header">
-                    <div>Rank</div>
                     <div>Name</div>
                     <div>Total Hrs</div>
                     <div>Sessions</div>
@@ -910,7 +915,6 @@ function markRead(idNumber, redirect) {
                             $maxMinutes = $row['max_minutes'] ?? 0;
                     ?>
                     <div class="leaderboard-row">
-                        <div><?php echo $rank++; ?></div>
                         <div><?php echo htmlspecialchars($row['name']); ?></div>
                         <div><?php echo number_format($totalHours, 2); ?> hrs</div>
                         <div><?php echo $row['total_sessions']; ?></div>
@@ -996,53 +1000,6 @@ function markRead(idNumber, redirect) {
                     <li>For serious offense, the lab personnel may call the Civil Security Office (CSU) for assistance.</li>
                     <li>Any technical problem or difficulty must be addressed to the laboratory supervisor, student assistant or instructor immediately.</li>
                 </ol>
-            </div>
-
-            <!-- Generate Reports -->
-            <div class="reports-card">
-                <h3>📊 Generate Reports</h3>
-                <div class="reports-buttons">
-                    <a href="generate_report.php?type=personal&format=html" class="report-btn" target="_blank">
-                        <span class="report-icon">📄</span>
-                        <span class="report-label">My Sit-in Report</span>
-                        <span class="report-desc">View complete history</span>
-                    </a>
-                    <a href="generate_report.php?type=personal&format=pdf" class="report-btn" target="_blank">
-                        <span class="report-icon">📥</span>
-                        <span class="report-label">Download PDF</span>
-                        <span class="report-desc">Save as PDF file</span>
-                    </a>
-                    <a href="generate_report.php?type=summary&format=html" class="report-btn" target="_blank">
-                        <span class="report-icon">📈</span>
-                        <span class="report-label">Summary Stats</span>
-                        <span class="report-desc">Overview &amp; statistics</span>
-                    </a>
-                    <a href="generate_report.php?type=summary&format=pdf" class="report-btn" target="_blank">
-                        <span class="report-icon">📥</span>
-                        <span class="report-label">Summary PDF</span>
-                        <span class="report-desc">Download summary</span>
-                    </a>
-                    <a href="generate_report.php?type=monthly&format=html" class="report-btn" target="_blank">
-                        <span class="report-icon">📅</span>
-                        <span class="report-label">Monthly Report</span>
-                        <span class="report-desc">Breakdown by month</span>
-                    </a>
-                    <a href="generate_report.php?type=monthly&format=pdf" class="report-btn" target="_blank">
-                        <span class="report-icon">📥</span>
-                        <span class="report-label">Monthly PDF</span>
-                        <span class="report-desc">Download monthly</span>
-                    </a>
-                    <a href="generate_report.php?type=csv" class="report-btn" target="_blank">
-                        <span class="report-icon">💾</span>
-                        <span class="report-label">Export CSV</span>
-                        <span class="report-desc">Download spreadsheet</span>
-                    </a>
-                    <a href="generate_report.php?type=personal&format=pdf" class="report-btn" target="_blank">
-                        <span class="report-icon">📚</span>
-                        <span class="report-label">Full Report PDF</span>
-                        <span class="report-desc">Complete history PDF</span>
-                    </a>
-                </div>
             </div>
         </div>
 

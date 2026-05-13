@@ -744,6 +744,110 @@ table tr:hover td {
     background: #888;
 }
 
+/* ========================= */
+/* REPORTS BUTTONS            */
+/* ========================= */
+.reports-buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.report-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 15px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+    border-radius: 15px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(102, 126, 234, 0.15);
+    text-align: center;
+}
+
+.report-btn:hover {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+    border-color: transparent;
+}
+
+.report-btn:hover .report-icon,
+.report-btn:hover .report-label,
+.report-btn:hover .report-desc {
+    color: white;
+}
+
+.report-icon {
+    font-size: 32px;
+    margin-bottom: 10px;
+    transition: color 0.3s ease;
+}
+
+.report-label {
+    font-weight: 600;
+    font-size: 14px;
+    color: #1a1a2e;
+    margin-bottom: 5px;
+    transition: color 0.3s ease;
+}
+
+.report-desc {
+    font-size: 11px;
+    color: #666;
+    transition: color 0.3s ease;
+}
+
+/* ========================= */
+/* RESPONSIVE                */
+/* ========================= */
+@media (max-width: 900px) {
+    .reports-buttons {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .dashboard-title {
+        font-size: 16px;
+        padding: 12px 15px;
+    }
+    
+    .stat-card .stat-number {
+        font-size: 28px;
+    }
+}
+
+@media (max-width: 600px) {
+    .reports-buttons {
+        grid-template-columns: 1fr;
+    }
+    
+    .topnav {
+        flex-direction: column;
+        padding: 15px 20px;
+        gap: 15px;
+    }
+    
+    .dashboard-container {
+        padding: 0 10px;
+        gap: 15px;
+    }
+    
+    .dashboard-card {
+        padding: 15px;
+    }
+    
+    .stat-card .stat-number {
+        font-size: 24px;
+    }
+    
+    .stat-card .stat-label {
+        font-size: 11px;
+    }
+}
+
 </style>
 </head>
 
@@ -1056,6 +1160,43 @@ if(isset($_GET['search_user']) && trim($_GET['search_user']) !== '') {
     <div style="background: white; border-radius: 20px; padding: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.1);">
         <div class="dashboard-title" style="margin-bottom: 20px;"><i class="fas fa-desktop"></i> Lab Statistics</div>
         <canvas id="labChart" style="max-height: 350px;"></canvas>
+    </div>
+</div>
+
+<!-- Generate Reports Card -->
+<div class="dashboard-card">
+    <div class="dashboard-title"><i class="fas fa-chart-bar"></i> Generate Reports</div>
+    <div class="reports-buttons">
+        <a href="generate_report.php?type=all_students&format=html" class="report-btn" target="_blank">
+            <span class="report-icon">👥</span>
+            <span class="report-label">All Students Report</span>
+            <span class="report-desc">Complete sit-in history</span>
+        </a>
+        <a href="generate_report.php?type=summary&format=html" class="report-btn" target="_blank">
+            <span class="report-icon">📈</span>
+            <span class="report-label">Summary Stats</span>
+            <span class="report-desc">Leaderboard & ranking</span>
+        </a>
+        <a href="generate_report.php?type=summary&format=pdf" class="report-btn" target="_blank">
+            <span class="report-icon">🏆</span>
+            <span class="report-label">Summary PDF</span>
+            <span class="report-desc">Ranking document</span>
+        </a>
+        <a href="generate_report.php?type=monthly&format=html" class="report-btn" target="_blank">
+            <span class="report-icon">📅</span>
+            <span class="report-label">Monthly Report</span>
+            <span class="report-desc">Breakdown by month</span>
+        </a>
+        <a href="generate_report.php?type=csv&report=all" class="report-btn" target="_blank">
+            <span class="report-icon">💾</span>
+            <span class="report-label">Export CSV</span>
+            <span class="report-desc">Download spreadsheet</span>
+        </a>
+        <a href="generate_report.php?type=feedback&format=html" class="report-btn" target="_blank">
+            <span class="report-icon">⭐</span>
+            <span class="report-label">Feedback Report</span>
+            <span class="report-desc">Student feedback</span>
+        </a>
     </div>
 </div>
 
